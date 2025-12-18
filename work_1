@@ -1,0 +1,87 @@
+import time
+
+# Набір монет, доступний для видачі решти
+COINS = [50, 25, 10, 5, 2, 1]
+
+def find_coins_greedy(amount):
+    """
+    Жадібний алгоритм для видачі решти.
+    Вибирає найбільші доступні номінали.
+    """
+    result = {}
+    remaining_amount = amount
+    
+    # Проходимо по монетах від найбільшої до найменшої
+    for coin in COINS:
+        if remaining_amount >= coin:
+            count = remaining_amount // coin
+            if count > 0:
+                result[coin] = count
+                remaining_amount = remaining_amount % coin
+                
+    return result
+
+def find_min_coins(amount):
+    """
+    Алгоритм динамічного програмування.
+    Знаходить мінімальну кількість монет для заданої суми.
+    """
+    # Ініціалізація масиву для зберігання мінімальної кількості монет для кожної суми від 0 до amount
+    # min_coins_needed[i] - мінімальна кількість монет для суми i
+    # last_coin_used[i] - остання монета, додана для досягнення суми i (для відновлення результату)
+    
+    # Використовуємо float('inf') як позначення недосяжності
+    min_coins_needed = [float('inf')] * (amount + 1)
+    last_coin_used = [0] * (amount + 1)
+    
+    min_coins_needed[0] = 0
+    
+    # Заповнюємо таблицю DP
+    for s in range(1, amount + 1):
+        for coin in COINS:
+            if s >= coin:
+                # Якщо поточна монета дозволяє отримати меншу кількість монет
+                if min_coins_needed[s - coin] + 1 < min_coins_needed[s]:
+                    min_coins_needed[s] = min_coins_needed[s - coin] + 1
+                    last_coin_used[s] = coin
+
+    # Відновлюємо результат (які саме монети були використані)
+    result = {}
+    current_sum = amount
+    
+    # Якщо суму неможливо скласти (наприклад, немає монети 1 і сума непарна)
+    if min_coins_needed[amount] == float('inf'):
+        return {} # Або підняти помилку
+        
+    while current_sum > 0:
+        coin = last_coin_used[current_sum]
+        if coin in result:
+            result[coin] += 1
+        else:
+            result[coin] = 1
+        current_sum -= coin
+        
+    return result
+
+# --- Блок тестування та заміру часу ---
+
+if __name__ == "__main__":
+    test_amount_small = 113
+    test_amount_large = 2024
+    test_amount_huge = 100_050 # Для демонстрації різниці в часі
+    
+    print(f"--- Тест для суми {test_amount_small} ---")
+    print("Greedy:", find_coins_greedy(test_amount_small))
+    print("DP:    ", find_min_coins(test_amount_small))
+    
+    print(f"\n--- Порівняння часу виконання (сума: {test_amount_huge}) ---")
+    
+    start_time = time.time()
+    find_coins_greedy(test_amount_huge)
+    greedy_time = time.time() - start_time
+    print(f"Жадібний алгоритм: {greedy_time:.6f} сек")
+    
+    start_time = time.time()
+    find_min_coins(test_amount_huge)
+    dp_time = time.time() - start_time
+    print(f"Динамічне програмування: {dp_time:.6f} сек")
